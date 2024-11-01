@@ -84,7 +84,7 @@ def get_users_query(user_cursor=None, repo_cursor=None, USER_COUNT=5, REPO_COUNT
     repo_cursor_query=repo_cursor_query)
     return query
 
-# fetch repositories for each user
+# fetch repositories for each  user and paginate after 100 repositories
 def fetch_repositories(user_login, repo_cursor=None):
     repo_cursor_query = f', after: "{repo_cursor}"' if repo_cursor else ""
 
@@ -139,7 +139,7 @@ def run_query(query):
     # else:
     #     raise Exception(f"Query failed to run: {response.status_code}\n{response.text}")
     elif response.status_code == 403:
-      # Rate limit exceeded emplement for retry and wait
+      # Rate limit exceeded emplement for retry and wait for 65 seconds
         print("Rate limit exceeded. Waiting for 60 seconds...")
         time.sleep(65)
         response = requests.post(API_URL, json={"query": query}, headers=HEADERS)
@@ -150,9 +150,7 @@ def run_query(query):
             print("Request failed with status code:", response.status_code)
             print("Response content:", response.text)
             raise Exception("Rate limit exceeded. Try again later.")
-        # print("Request failed with status code:", response.status_code)
-        # print("Response content:", response.text)
-        # raise Exception("Rate limit exceeded. Try again later.")
+    
     else:
         print("Failed request status:", response.status_code)
         print("Response content:", response.text)
@@ -179,9 +177,7 @@ while True:
       public_repos_count = 0
       repos_count = 0
       user_node = user_edge["node"]
-      # user_login = user_node["login"] or ""
-      # user_login = user_login.strip()
-      # print("user node---------------", user_node)
+
       if user_node != {}:
         # user_login = str(user_login)
         user_data_obj = {
@@ -243,8 +239,7 @@ while True:
         users_data.append(user_data_obj)
         
         print(user_counter,"next user --------------------------------")
-      # if check_page == 2:
-      #     break
+      
     # Check if there are more users to paginate
     if search_data["pageInfo"]["hasNextPage"]:
         user_cursor = search_data["pageInfo"]["endCursor"]
@@ -260,10 +255,3 @@ repos_df = pd.DataFrame(repos_data)
 users_df.to_csv("users.csv", index=False)
 repos_df.to_csv("repositories.csv", index=False)
 
-# Generate README.md
-with open("README.md", "w") as readme_file:
-    readme_file.write("# GitHub Users and Repositories Data\n\n")
-    readme_file.write("This repository contains data for GitHub users located in Hyderabad with more than 50 followers.\n\n")
-    readme_file.write("## Files:\n")
-    readme_file.write("- `users.csv`: Contains user details.\n")
-    readme_file.write("- `repositories.csv`: Contains repository details for each user.\n")
